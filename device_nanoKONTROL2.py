@@ -11,7 +11,6 @@ from transport import *
 from general import *
 from time import sleep
 import config
-import math
 
 # -->           HARDWARE
 NEXT_TRACK_BUTTON = 0
@@ -70,21 +69,13 @@ def OnRefresh(flag):
 
 
 def updateButtonLight(button, turnOn=False):
-    value = 0
-    if turnOn:
-        value = 127
-
-    channel = TRANSPORT_CHANNEL
-    if button >= TRACKS_FIRST_BUTTON:
-        channel = MIDI_CHANNEL
-
+    value = 127 if turnOn else 0
+    channel = MIDI_CHANNEL if button >= TRACKS_FIRST_BUTTON else TRANSPORT_CHANNEL
     midiOutMsg(MIDI_CONTROLCHANGE, channel, button, value)
 
 
 def updateTracksButtons(turnOn=False):
-    value = 0
-    if turnOn:
-        value = 127
+    value = 127 if turnOn else 0
     for index in range(TRACKS_FIRST_BUTTON, TRACKS_LAST_BUTTON + 1):
         midiOutMsg(MIDI_CONTROLCHANGE, MIDI_CHANNEL, index, value)
 
@@ -411,6 +402,12 @@ class TracksManager:
     def _getArmButton(groupIndex):
         return TRACKS_FIRST_BUTTON + groupIndex * 3 + 2
 
+    def _validateGroupIndex(self, button):
+        groupIndex = self._getGroupIndexFromButton(button)
+        if groupIndex < 0 or groupIndex >= len(self.trackGroups):
+            return None
+        return groupIndex
+
     def findTracksOfGroup(self, groupIndex, onlyMasters=False):
         trackGroup = []
         textToFindGroupTrack = f"({groupIndex})"
@@ -440,8 +437,8 @@ class TracksManager:
     # <--- mixer scan methods
 
     def armTrack(self, button):
-        groupIndex = self._getGroupIndexFromButton(button)
-        if groupIndex < 0 or groupIndex >= len(self.trackGroups):
+        groupIndex = self._validateGroupIndex(button)
+        if groupIndex is None:
             return
 
         armButton = self._getArmButton(groupIndex)
@@ -472,8 +469,8 @@ class TracksManager:
                 break
 
     def muteGroup(self, button):
-        groupIndex = self._getGroupIndexFromButton(button)
-        if groupIndex < 0 or groupIndex >= len(self.trackGroups):
+        groupIndex = self._validateGroupIndex(button)
+        if groupIndex is None:
             return
 
         if self.groupSoloed > -1:
@@ -513,8 +510,8 @@ class TracksManager:
         self.mutedGroups = []
 
     def soloGroup(self, button):
-        groupIndex = self._getGroupIndexFromButton(button)
-        if groupIndex < 0 or groupIndex >= len(self.trackGroups) or len(self.trackGroups[groupIndex]) == 0:
+        groupIndex = self._validateGroupIndex(button)
+        if groupIndex is None or len(self.trackGroups[groupIndex]) == 0:
             return
 
         firstGroupTrack = self.trackGroups[groupIndex][0]
