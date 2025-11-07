@@ -137,7 +137,8 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 
 ### Control Reference
 
-\*\*Mixer
+**Mixer Scan:**
+- `◄ PREV` + `► NEXT`: Rescan mixer tracks
 
 **Transport Section:**
 
