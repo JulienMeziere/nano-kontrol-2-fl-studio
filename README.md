@@ -214,5 +214,3 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 ## Credits
 
 Script by Julien MEZIERE
-
-Based on concepts from the nanoKONTROL2 community
