@@ -156,10 +156,16 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 
 **Instruments Navigation:**
 
+<img width="160" height="190" alt="image" src="https://github.com/user-attachments/assets/6c2b576e-fffd-4a38-9f1f-1bc8c3265716" />
+
+
 - `◄ PREV`: Previous instrument
 - `► NEXT`: Next instrument
 
 **Patterns Navigation:**
+
+<img width="247" height="61" alt="image" src="https://github.com/user-attachments/assets/03cd66ae-da17-4c8b-8ccd-c2a81907eb5c" />
+
 
 - `MODE` + `◄ PREV`: Next pattern
 - `MODE` + `► NEXT`: Previous pattern
