@@ -15,23 +15,24 @@ A comprehensive FL Studio MIDI script that transforms your Korg nanoKONTROL2 int
 
 - **Play/Stop/Record**: Standard transport with LED feedback
 - **Rewind/Fast Forward**: Quick navigation through your project
-- **Loop Mode Toggle**: MODE button toggles between song/pattern mode and sequencer visibility
+- **Loop Mode Toggle**: `MODE` toggles between song/pattern mode and sequencer visibility
 
-### 🎵 Pattern Navigation
+### 🎵 Pattern/Instruments Navigation
 
-- **Quick Pattern Switch**: Hold MODE + PREV/NEXT to jump between patterns
+- **Quick Instruments Switch**: `◄ PREV` or `► NEXT` to jump between instruments
+- **Quick Pattern Switch**: `MODE` + (`◄ PREV` or `► NEXT`) to jump between patterns
 
 ### ✂️ Advanced Loop Tools
 
-- **Bar-Snapped Navigation**: MARKER PREV/NEXT buttons move by bars (default: 4 bars)
-- **Create Selections**: Hold MARKER SET to create time selections
-- **Move Selections**: Hold MARKER SET and use PREV/NEXT to move selection by its own length
-- **Toggle Selections**: Press PREV + NEXT markers together to save/restore selections
-- **Fine Control**: Hold FORWARD during selection for 1-bar precision
+- **Bar-Snapped Navigation**: `MARKER ◄` or `MARKER ►` to move by 4 bars
+- **Create Selections**: `MARKER SET` to create time selections
+- **Move Selections**: `MARKER SET` + (`◄ PREV` or `► NEXT`) to move selection by its own length
+- **Toggle Selections**: `MARKER ◄` + `MARKER ►` to save/restore selections
+- **Fine Control**: Hold `►► FORWARD` during selection for 1-bar precision
 
 ### 🔄 Mixer Track Scanning
 
-- **Press PREV + NEXT together**: Rescan mixer tracks
+- **Press `◄ PREV` + `► NEXT` together**: Rescan mixer tracks
 
 ## Installation
 
@@ -121,9 +122,9 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 │  KORG nanoKONTROL2                                       │
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
-│   [◄] [►]  [SET] [◄M] [►M]  [◄◄] [►►] [■]  [▶] [●]      │
+│  [◄]  [►]  [SET] [◄M] [►M]  [◄◄] [►►] [■]  [▶] [●]      │
 │  PREV NEXT  MODE PREV NEXT  REW  FWD  STOP PLAY REC      │
-|                                                          |
+│                                                          │
 │  [S] [S] [S] [S] [S] [S] [S] [S]  ← Solo                 │
 │  [M] [M] [M] [M] [M] [M] [M] [M]  ← Mute                 │
 │  [R] [R] [R] [R] [R] [R] [R] [R]  ← Arm/Record           │
@@ -148,25 +149,27 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 - `● RECORD`: Start recording
 - `◄◄ REWIND`: Rewind (hold for continuous)
 - `►► FORWARD`: Fast forward (hold for continuous)
-- `MODE`: Toggle between pattern/song modes
+- `MODE`: Toggle between song/pattern mode
 
 **Instruments / Patterns Navigation:**
 
 - `◄ PREV`: Previous instrument
 - `► NEXT`: Next instrument
 - `MODE` + `◄ PREV`: Next pattern
-  `MODE` + `► NEXT`: Previous pattern
+- `MODE` + `► NEXT`: Previous pattern
 
 **Marker/Selection:**
 
 <img width="897" height="225" alt="image" src="https://github.com/user-attachments/assets/50a9834b-a3c5-43e1-8400-37f4bd62ea8f" />
 
 - `MARKER ◄`: Move back 4 bars
-- `MARKER ►`: Move forward 4 bar
-- `►► FORWARD` + `MARKER ◄`: Move back 1 bar
-- `►► FORWARD` + `MARKER ◄`: Move forward 1 bar
+- `MARKER ►`: Move forward 4 bars
+- `►► FORWARD` + `MARKER ◄`: Move back 1 bar (fine control)
+- `►► FORWARD` + `MARKER ►`: Move forward 1 bar (fine control)
 - `MARKER SET`: Hold to create time selection
-- `MARKER ◄ + ►`: Toggle save/restore selection
+- `MARKER SET` + `◄ PREV`: Move selection backward by its own length
+- `MARKER SET` + `► NEXT`: Move selection forward by its own length
+- `MARKER ◄` + `MARKER ►`: Toggle save/restore selection
 
 **Track Groups (Channels 1-8):**
 
@@ -190,7 +193,7 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 **Track groups don't respond:**
 
 - Verify track naming follows the (1-8) and [1-8] convention exactly
-- Press PREV + NEXT to rescan mixer tracks (buttons will flash twice)
+- Press `◄ PREV` + `► NEXT` to rescan mixer tracks (buttons will flash twice)
 - Check that at least one track has the proper naming for each group
 
 **Volume faders don't work:**
