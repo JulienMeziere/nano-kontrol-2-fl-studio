@@ -39,6 +39,7 @@ TRACKS_LAST_FADER = 50
 
 # -->           CONSTANTS
 MAX_VOLUME = 0.8
+VOLUME_OFFSET = 0.003
 SLEEP_TIME = 0.05
 FL_TOTAL_NB_TRACKS = 125
 TRANSPORT_CHANNEL = config.TransportChan - 1
@@ -46,6 +47,7 @@ MIDI_CHANNEL = config.MIDIChannel - 1
 TOGGLE_MODE_BUTTONS = [PLAY_BUTTON, RECORD_BUTTON, MODE_BUTTON]
 ONE_BAR_IN_TICKS = 384
 FOUR_BARS_IN_TICKS = 1536
+HW_DIRTY_LEDS_ALTERNATIVE = 260
 # <--
 
 
@@ -63,7 +65,7 @@ def OnProjectLoad():
 
 
 def OnRefresh(flag):
-    if flag == HW_Dirty_LEDs or flag == 260:
+    if flag == HW_Dirty_LEDs or flag == HW_DIRTY_LEDS_ALTERNATIVE:
         controlsManager.updateButtonStates()
 
 
@@ -87,12 +89,26 @@ def updateTracksButtons(turnOn=False):
         midiOutMsg(MIDI_CONTROLCHANGE, MIDI_CHANNEL, index, value)
 
 
-class GeneralControlsManager:
-    def __init__(self, triggerMixerTracksScan):
-        self.nextTrackPressed = False
-        self.prevTrackPressed = False
-        self.triggerMixerTracksScan = triggerMixerTracksScan
-        self.updateButtonStates(True)
+class ButtonLightController:
+    @staticmethod
+    def updateLight(button, turnOn=False):
+        updateButtonLight(button, turnOn)
+
+    @staticmethod
+    def updateTransportStates(init=False):
+        if init:
+            updateButtonLight(REWIND_BUTTON)
+            updateButtonLight(FORWARD_BUTTON)
+            updateButtonLight(STOP_BUTTON)
+
+        updateButtonLight(RECORD_BUTTON, isRecording() != 0)
+        updateButtonLight(PLAY_BUTTON, isPlaying() != 0)
+        updateButtonLight(MODE_BUTTON, getLoopMode() == 0)
+
+
+class SelectionManager:
+    def __init__(self, lightController):
+        self.lightController = lightController
         self.prevSelectionStart = None
         self.prevSelectionEnd = None
         self.prevMarkerPressed = False
@@ -101,201 +117,273 @@ class GeneralControlsManager:
         self.wasPlayingWhenSelectionStarted = False
         self.selectionStep = FOUR_BARS_IN_TICKS
         self.hasSelectionMoved = False
-        self.modeButtonPressed = False
-        self.patternHasMoved = False
 
-    def updateButtonStates(self, init=False):
-        if init:
-            updateButtonLight(REWIND_BUTTON)
-            updateButtonLight(FORWARD_BUTTON)
-            updateButtonLight(STOP_BUTTON)
+    def isActive(self):
+        return self.newSelectionStart is not None
 
-        if isRecording() == 0:
-            updateButtonLight(RECORD_BUTTON)
-        else:
-            updateButtonLight(RECORD_BUTTON, True)
+    def setAccuracy(self, useHighAccuracy):
+        self.selectionStep = ONE_BAR_IN_TICKS if useHighAccuracy else FOUR_BARS_IN_TICKS
 
-        if isPlaying() == 0:
-            updateButtonLight(PLAY_BUTTON)
-        else:
-            updateButtonLight(PLAY_BUTTON, True)
-
-        if getLoopMode() == 0:
-            updateButtonLight(MODE_BUTTON, True)
-        else:
-            updateButtonLight(MODE_BUTTON)
-
-    def checkIfShouldTriggerScan(self):
-        if self.prevTrackPressed and self.nextTrackPressed:
-            self.triggerMixerTracksScan()
-    
-    def checkIfShouldManageSelection(self):
+    def checkIfShouldToggleSelection(self):
         if self.prevMarkerPressed and self.nextMarkerPressed:
             currentStart = selectionStart()
             currentEnd = selectionEnd()
             
             if currentEnd == -1 and self.prevSelectionStart is not None and self.prevSelectionEnd is not None:
-                # No current selection, restoring previous selection
                 liveSelection(self.prevSelectionStart, False)
                 liveSelection(self.prevSelectionEnd, True)
             else:
-                # Save current selection and clear it
                 self.prevSelectionStart = currentStart
                 self.prevSelectionEnd = currentEnd
                 liveSelection(0, False)
                 liveSelection(0, True)
             setSongPos(self.prevSelectionStart, 2)
 
+    def startNewSelection(self):
+        self.wasPlayingWhenSelectionStarted = isPlaying()
+        if self.wasPlayingWhenSelectionStarted:
+            start()
+
+        self.prevSelectionStart = selectionStart()
+        self.prevSelectionEnd = selectionEnd()
+        liveSelection(0, False)
+        liveSelection(0, True)
+        
+        currentPos = getSongPos(2)
+        currentBar = round(currentPos / self.selectionStep)
+        targetPos = currentBar * self.selectionStep
+        setSongPos(targetPos, 2)
+        
+        self.newSelectionStart = currentTime(0)
+
+    def endSelection(self):
+        if self.newSelectionStart is not None:
+            if not self.hasSelectionMoved:
+                newEnd = currentTime(0)
+                liveSelection(self.newSelectionStart, False)
+                liveSelection(newEnd, True)
+            if not isPlaying() and self.wasPlayingWhenSelectionStarted:
+                start()
+        self.newSelectionStart = None
+        self.hasSelectionMoved = False
+
+    def _moveSelection(self, direction):
+        if self.prevSelectionStart is not None and self.prevSelectionEnd is not None:
+            selectionLength = self.prevSelectionEnd - self.prevSelectionStart
+            offset = selectionLength * direction
+            newStart = max(0, self.prevSelectionStart + offset)
+            newEnd = max(0, self.prevSelectionEnd + offset)
+            liveSelection(newStart, False)
+            liveSelection(newEnd, True)
+            setSongPos(newStart, 2)
+            self.prevSelectionStart = newStart
+            self.prevSelectionEnd = newEnd
+            self.hasSelectionMoved = True
+
+    def moveSelectionForward(self):
+        self._moveSelection(1)
+
+    def moveSelectionBackward(self):
+        self._moveSelection(-1)
+
+    def movePrevMarker(self):
+        currentPos = getSongPos(2)
+        currentBar = currentPos // self.selectionStep
+        targetBar = max(0, currentBar - 1)
+        targetPos = targetBar * self.selectionStep
+        setSongPos(targetPos, 2)
+        self.prevMarkerPressed = True
+        self.checkIfShouldToggleSelection()
+
+    def moveNextMarker(self):
+        currentPos = getSongPos(2)
+        currentBar = currentPos // self.selectionStep
+        targetBar = currentBar + 1
+        targetPos = targetBar * self.selectionStep
+        setSongPos(targetPos, 2)
+        self.nextMarkerPressed = True
+        self.checkIfShouldToggleSelection()
+
+    def releasePrevMarker(self):
+        self.prevMarkerPressed = False
+
+    def releaseNextMarker(self):
+        self.nextMarkerPressed = False
+
+
+class TransportController:
+    def __init__(self, lightController):
+        self.lightController = lightController
+
+    def play(self):
+        self.lightController.updateLight(PLAY_BUTTON, True)
+        start()
+
+    def stop(self):
+        self.lightController.updateLight(PLAY_BUTTON, False)
+        self.lightController.updateLight(RECORD_BUTTON, False)
+        self.lightController.updateLight(STOP_BUTTON, True)
+        stop()
+
+    def record(self):
+        self.lightController.updateLight(RECORD_BUTTON, True)
+        record()
+
+    def rewindStart(self):
+        rewind(2)
+        self.lightController.updateLight(REWIND_BUTTON, True)
+
+    def rewindEnd(self):
+        rewind(0)
+        self.lightController.updateLight(REWIND_BUTTON, False)
+
+    def fastForwardStart(self):
+        fastForward(2)
+        self.lightController.updateLight(FORWARD_BUTTON, True)
+
+    def fastForwardEnd(self):
+        fastForward(0)
+        self.lightController.updateLight(FORWARD_BUTTON, False)
+
+
+class NavigationController:
+    def __init__(self, lightController, triggerMixerTracksScan):
+        self.lightController = lightController
+        self.triggerMixerTracksScan = triggerMixerTracksScan
+        self.nextTrackPressed = False
+        self.prevTrackPressed = False
+
+    def checkIfShouldTriggerScan(self):
+        if self.prevTrackPressed and self.nextTrackPressed:
+            self.triggerMixerTracksScan()
+
+    def prevTrack(self):
+        globalTransport(102, 1, 2, 15)
+        self.prevTrackPressed = True
+        self.checkIfShouldTriggerScan()
+
+    def nextTrack(self):
+        globalTransport(102, -1, 2, 15)
+        self.nextTrackPressed = True
+        self.checkIfShouldTriggerScan()
+
+    def releasePrevTrack(self):
+        self.prevTrackPressed = False
+
+    def releaseNextTrack(self):
+        self.nextTrackPressed = False
+
+
+class PatternController:
+    def __init__(self):
+        self.modeButtonPressed = False
+        self.patternHasMoved = False
+
+    def isModePressed(self):
+        return self.modeButtonPressed
+
+    def pressModeButton(self):
+        self.modeButtonPressed = True
+
+    def releaseModeButton(self):
+        shouldToggleLoopMode = not self.patternHasMoved
+        self.modeButtonPressed = False
+        self.patternHasMoved = False
+        return shouldToggleLoopMode
+
+    def nextPattern(self):
+        self.patternHasMoved = True
+        globalTransport(100, 1, 2, 15)
+
+    def prevPattern(self):
+        self.patternHasMoved = True
+        globalTransport(100, -1, 2, 15)
+
+
+class LoopModeController:
+    @staticmethod
+    def toggleLoopMode():
+        setLoopMode()
+        if getLoopMode() == 0:
+            showWindow(1)
+        else:
+            hideWindow(1)
+
+
+class GeneralControlsManager:
+    def __init__(self, triggerMixerTracksScan):
+        self.lightController = ButtonLightController()
+        self.selectionManager = SelectionManager(self.lightController)
+        self.transportController = TransportController(self.lightController)
+        self.navigationController = NavigationController(self.lightController, triggerMixerTracksScan)
+        self.patternController = PatternController()
+        self.loopModeController = LoopModeController()
+        self.updateButtonStates(True)
+
+    def updateButtonStates(self, init=False):
+        self.lightController.updateTransportStates(init)
+
     def onPressStart(self, button):
         if button == PLAY_BUTTON:
-            updateButtonLight(button, True)
-            start()
+            self.transportController.play()
         elif button == STOP_BUTTON:
-            updateButtonLight(PLAY_BUTTON, False)
-            updateButtonLight(RECORD_BUTTON, False)
-            updateButtonLight(button, True)
-            stop()
+            self.transportController.stop()
         elif button == RECORD_BUTTON:
-            updateButtonLight(button, True)
-            record()
+            self.transportController.record()
         elif button == MODE_BUTTON:
-            self.modeButtonPressed = True
+            self.patternController.pressModeButton()
         elif button == PREV_TRACK_BUTTON:
-            if self.modeButtonPressed:
-                self.patternHasMoved = True
-                globalTransport(100, 1, 2, 15)  # Next pattern (FPT_PatternJog)
-            elif self.newSelectionStart is not None:
-                # Move selection forward by its own length using prevSelection values
-                if self.prevSelectionStart is not None and self.prevSelectionEnd is not None:
-                    selectionLength = self.prevSelectionEnd - self.prevSelectionStart
-                    newStart = self.prevSelectionStart + selectionLength
-                    newEnd = self.prevSelectionEnd + selectionLength
-                    liveSelection(newStart, False)
-                    liveSelection(newEnd, True)
-                    setSongPos(newStart, 2)
-                    # Update the prevSelection values
-                    self.prevSelectionStart = newStart
-                    self.prevSelectionEnd = newEnd
-                    self.hasSelectionMoved = True
+            if self.patternController.isModePressed():
+                self.patternController.nextPattern()
+            elif self.selectionManager.isActive():
+                self.selectionManager.moveSelectionForward()
             else:
-                globalTransport(102, 1, 2, 15)
-            self.prevTrackPressed = True
-            self.checkIfShouldTriggerScan()
+                self.navigationController.prevTrack()
         elif button == NEXT_TRACK_BUTTON:
-            if self.modeButtonPressed:
-                self.patternHasMoved = True
-                globalTransport(100, -1, 2, 15)  # Next pattern (FPT_PatternJog)
-            elif self.newSelectionStart is not None:
-                # Move selection back by its own length using prevSelection values
-                if self.prevSelectionStart is not None and self.prevSelectionEnd is not None:
-                    selectionLength = self.prevSelectionEnd - self.prevSelectionStart
-                    newStart = max(0, self.prevSelectionStart - selectionLength)
-                    newEnd = max(0, self.prevSelectionEnd - selectionLength)
-                    liveSelection(newStart, False)
-                    liveSelection(newEnd, True)
-                    setSongPos(newStart, 2)
-                    # Update the prevSelection values
-                    self.prevSelectionStart = newStart
-                    self.prevSelectionEnd = newEnd
-                    self.hasSelectionMoved = True
+            if self.patternController.isModePressed():
+                self.patternController.prevPattern()
+            elif self.selectionManager.isActive():
+                self.selectionManager.moveSelectionBackward()
             else:
-                globalTransport(102, -1, 2, 15)
-            self.nextTrackPressed = True
-            self.checkIfShouldTriggerScan()
+                self.navigationController.nextTrack()
         elif button == REWIND_BUTTON:
-            rewind(2)
-            updateButtonLight(button, True)
+            self.transportController.rewindStart()
         elif button == FORWARD_BUTTON:
-            if self.newSelectionStart is not None:
-                # if we are in a selection, we use that button to increase selection accuracy
-                self.selectionStep = ONE_BAR_IN_TICKS
+            if self.selectionManager.isActive():
+                self.selectionManager.setAccuracy(True)
             else:
-                fastForward(2)
-            updateButtonLight(button, True)
+                self.transportController.fastForwardStart()
+            self.lightController.updateLight(button, True)
         elif button == MARKER_PREV_BUTTON:
-            # Move playhead back one bar and snap to bar boundary
-            currentPos = getSongPos(2)
-            currentBar = currentPos // self.selectionStep  # Calculate current bar
-            targetBar = max(0, currentBar - 1)  # Previous bar (minimum 0)
-            targetPos = targetBar * self.selectionStep  # Snap to bar start
-            setSongPos(targetPos, 2)
-            self.prevMarkerPressed = True
-            self.checkIfShouldManageSelection()
+            self.selectionManager.movePrevMarker()
         elif button == MARKER_NEXT_BUTTON:
-            # Move playhead forward one bar and snap to bar boundary
-            currentPos = getSongPos(2)
-            currentBar = currentPos // self.selectionStep  # Calculate current bar
-            targetBar = currentBar + 1  # Next bar
-            targetPos = targetBar * self.selectionStep  # Snap to bar start
-            setSongPos(targetPos, 2)
-            self.nextMarkerPressed = True
-            self.checkIfShouldManageSelection()
+            self.selectionManager.moveNextMarker()
         elif button == MARKER_SET_BUTTON:
-            # Pause playback and start new selection at nearest bar
-            self.wasPlayingWhenSelectionStarted = isPlaying()
-            if self.wasPlayingWhenSelectionStarted:
-                start()
-            
-
-            # Clear current selection
-            self.prevSelectionStart = selectionStart()
-            self.prevSelectionEnd = selectionEnd()
-            liveSelection(0, False)
-            liveSelection(0, True)
-            
-            # Snap to nearest bar
-            currentPos = getSongPos(2)
-            currentBar = round(currentPos / self.selectionStep)  # Round to nearest bar
-            targetPos = currentBar * self.selectionStep  # Snap to bar start
-            setSongPos(targetPos, 2)
-            
-            self.newSelectionStart = currentTime(0)
+            self.selectionManager.startNewSelection()
         else:
-            updateButtonLight(button, True)
+            self.lightController.updateLight(button, True)
 
     def onPressEnd(self, button):
         if button == PREV_TRACK_BUTTON:
-            self.prevTrackPressed = False
+            self.navigationController.releasePrevTrack()
         elif button == NEXT_TRACK_BUTTON:
-            self.nextTrackPressed = False
+            self.navigationController.releaseNextTrack()
         elif button == MARKER_PREV_BUTTON:
-            self.prevMarkerPressed = False
+            self.selectionManager.releasePrevMarker()
         elif button == MARKER_NEXT_BUTTON:
-            self.nextMarkerPressed = False
+            self.selectionManager.releaseNextMarker()
         elif button == MARKER_SET_BUTTON:
-            if self.newSelectionStart is not None:
-                if not self.hasSelectionMoved:
-                    newEnd = currentTime(0)
-                    liveSelection(self.newSelectionStart, False)
-                    liveSelection(newEnd, True)
-                if not isPlaying() and self.wasPlayingWhenSelectionStarted:
-                    start()
-            self.newSelectionStart = None
-            self.hasSelectionMoved = False
+            self.selectionManager.endSelection()
         elif button == REWIND_BUTTON:
-            rewind(0)
-            updateButtonLight(button, False)
+            self.transportController.rewindEnd()
         elif button == FORWARD_BUTTON:
-            fastForward(0)
-            self.selectionStep = FOUR_BARS_IN_TICKS
-            updateButtonLight(button, False)
+            self.transportController.fastForwardEnd()
+            self.selectionManager.setAccuracy(False)
         elif button == MODE_BUTTON:
-            if self.patternHasMoved:
-                self.patternHasMoved = False
-            else:
-                setLoopMode()
-                # Toggle sequencer visibility based on loop mode
-                if getLoopMode() == 0:
-                    showWindow(1) 
-                else:
-                    hideWindow(1)
-            self.modeButtonPressed = False
-        else:
-            try:
-                TOGGLE_MODE_BUTTONS.index(button)
-                return
-            except:
-                updateButtonLight(button, False)
+            if self.patternController.releaseModeButton():
+                self.loopModeController.toggleLoopMode()
+        elif button not in TOGGLE_MODE_BUTTONS:
+            self.lightController.updateLight(button, False)
 
 
 class TracksManager:
@@ -307,15 +395,30 @@ class TracksManager:
         self.trackGroupMasters = []
         updateTracksButtons(False)
 
-    # mixer scan methods --->
+    @staticmethod
+    def _getGroupIndexFromButton(button):
+        return (button - TRACKS_FIRST_BUTTON) // 3
+
+    @staticmethod
+    def _getSoloButton(groupIndex):
+        return TRACKS_FIRST_BUTTON + groupIndex * 3
+
+    @staticmethod
+    def _getMuteButton(groupIndex):
+        return TRACKS_FIRST_BUTTON + groupIndex * 3 + 1
+
+    @staticmethod
+    def _getArmButton(groupIndex):
+        return TRACKS_FIRST_BUTTON + groupIndex * 3 + 2
+
     def findTracksOfGroup(self, groupIndex, onlyMasters=False):
         trackGroup = []
-        textToFindGroupTrack = "(" + str(groupIndex) + ")"
-        textToFindGroupMasterTrack = "[" + str(groupIndex) + "]"
+        textToFindGroupTrack = f"({groupIndex})"
+        textToFindGroupMasterTrack = f"[{groupIndex}]"
 
         for trackIndex in range(0, FL_TOTAL_NB_TRACKS + 1):
             trackName = getTrackName(trackIndex)
-            if (onlyMasters == False and textToFindGroupTrack in trackName) or textToFindGroupMasterTrack in trackName:
+            if (not onlyMasters and textToFindGroupTrack in trackName) or textToFindGroupMasterTrack in trackName:
                 trackGroup.append(trackIndex)
 
         return trackGroup
@@ -337,94 +440,80 @@ class TracksManager:
     # <--- mixer scan methods
 
     def armTrack(self, button):
-        groupIndex = math.floor((button - TRACKS_FIRST_BUTTON) / 3)
+        groupIndex = self._getGroupIndexFromButton(button)
         if groupIndex < 0 or groupIndex >= len(self.trackGroups):
             return
 
-        armButton = TRACKS_FIRST_BUTTON + groupIndex * 3 + 2
-        try:
-            index = self.armedGroups.index(groupIndex)
-
-            # unarm
-            del self.armedGroups[index]
+        armButton = self._getArmButton(groupIndex)
+        
+        if groupIndex in self.armedGroups:
+            self.armedGroups.remove(groupIndex)
             updateButtonLight(armButton, False)
 
             for track in self.trackGroupMasters[groupIndex]:
-                if (isTrackArmed(track) != 0):
+                if isTrackArmed(track) != 0:
                     armTrack(track)
-
-        except:
-            # arm
+        else:
             self.armedGroups.append(groupIndex)
             updateButtonLight(armButton, True)
 
             for track in self.trackGroupMasters[groupIndex]:
-                if (isTrackArmed(track) == 0):
+                if isTrackArmed(track) == 0:
                     armTrack(track)
 
     def checkIfOnlyOneGroupUnmuted(self):
         if len(self.mutedGroups) != len(self.trackGroups) - 1:
             return
 
-        for index in range(0, len(self.trackGroups)):
-            if (index in self.mutedGroups) == False:
+        for index in range(len(self.trackGroups)):
+            if index not in self.mutedGroups:
                 self.groupSoloed = index
-                updateButtonLight(
-                    TRACKS_FIRST_BUTTON + index * 3, True)
+                updateButtonLight(self._getSoloButton(index), True)
                 break
 
     def muteGroup(self, button):
-        groupIndex = math.floor((button - TRACKS_FIRST_BUTTON) / 3)
+        groupIndex = self._getGroupIndexFromButton(button)
         if groupIndex < 0 or groupIndex >= len(self.trackGroups):
             return
 
         if self.groupSoloed > -1:
-            updateButtonLight(
-                TRACKS_FIRST_BUTTON + self.groupSoloed * 3, False)
+            updateButtonLight(self._getSoloButton(self.groupSoloed), False)
             self.groupSoloed = -1
 
-        muteButton = TRACKS_FIRST_BUTTON + groupIndex * 3 + 1
-        mute = False
-        try:
-            index = self.mutedGroups.index(groupIndex)
-
-            # unmute
-            del self.mutedGroups[index]
-
-        except:
-            # mute
+        muteButton = self._getMuteButton(groupIndex)
+        
+        if groupIndex in self.mutedGroups:
+            self.mutedGroups.remove(groupIndex)
+            mute = False
+        else:
             self.mutedGroups.append(groupIndex)
             mute = True
 
         updateButtonLight(muteButton, not mute)
 
-        for index in range(0, len(self.trackGroups[groupIndex])):
-            track = self.trackGroups[groupIndex][index]
-            if mute == True and isTrackMuted(track) == 0:
+        for track in self.trackGroups[groupIndex]:
+            if mute and isTrackMuted(track) == 0:
                 muteTrack(track)
-            elif mute == False and isTrackMuted(track) != 0:
+            elif not mute and isTrackMuted(track) != 0:
                 muteTrack(track)
 
         self.checkIfOnlyOneGroupUnmuted()
 
     def muteAllTracksExcept(self, exceptionGroupIndex):
-        updateButtonLight(
-            TRACKS_FIRST_BUTTON + exceptionGroupIndex * 3 + 1, True)
+        updateButtonLight(self._getMuteButton(exceptionGroupIndex), True)
         self.mutedGroups = []
-        for index in range(0, len(self.trackGroups)):
+        for index in range(len(self.trackGroups)):
             if index != exceptionGroupIndex:
-                updateButtonLight(
-                    TRACKS_FIRST_BUTTON + index * 3 + 1, False)
+                updateButtonLight(self._getMuteButton(index), False)
                 self.mutedGroups.append(index)
 
     def clearAllMuteButtonLights(self):
-        for index in range(0, len(self.trackGroups)):
-            updateButtonLight(
-                TRACKS_FIRST_BUTTON + index * 3 + 1, True)
+        for index in range(len(self.trackGroups)):
+            updateButtonLight(self._getMuteButton(index), True)
         self.mutedGroups = []
 
     def soloGroup(self, button):
-        groupIndex = math.floor((button - TRACKS_FIRST_BUTTON) / 3)
+        groupIndex = self._getGroupIndexFromButton(button)
         if groupIndex < 0 or groupIndex >= len(self.trackGroups) or len(self.trackGroups[groupIndex]) == 0:
             return
 
@@ -444,8 +533,7 @@ class TracksManager:
             return
 
         if self.groupSoloed >= 0:
-            updateButtonLight(
-                TRACKS_FIRST_BUTTON + self.groupSoloed * 3, False)
+            updateButtonLight(self._getSoloButton(self.groupSoloed), False)
 
         updateButtonLight(button, True)
         self.muteAllTracksExcept(groupIndex)
@@ -469,7 +557,7 @@ class TracksManager:
         if groupIndex < 0 or groupIndex >= len(self.trackGroupMasters):
             return
 
-        volume = (value / 127 - 0.003) * MAX_VOLUME
+        volume = (value / 127 - VOLUME_OFFSET) * MAX_VOLUME
         for track in self.trackGroupMasters[groupIndex]:
             setTrackVolume(track, volume)
 
