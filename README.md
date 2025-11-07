@@ -176,34 +176,6 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 - `Faders`: Control group master volume (max 80%)
 - `Knobs`: Assign them to whatever you need
 
-## Workflow Examples
-
-### Creating a Loop Selection
-
-1. Position playhead at start of desired loop
-2. Press and hold `MARKER SET`
-3. Playback moves to nearest bar
-4. Release `MARKER SET` when you reach the end
-5. Selection is created between start and end points
-
-### Quick Muting/Soloing
-
-1. Press `S` button above any fader to solo that track group
-2. Press `M` button to mute a group
-3. Press `S` again on a soloed group to return to normal
-
-### Fine-Tuning Selections
-
-1. Hold `MARKER SET` to start selection
-2. While holding, also hold `FORWARD` button
-3. Now `MARKER ◄/►` moves in 1-bar increments instead of 4
-
-### Rescanning Tracks
-
-1. After renaming or adding tracks in your mixer
-2. Press `PREV` + `NEXT` together
-3. All buttons will flash twice confirming the rescan
-
 ## Technical Details
 
 - **Max Volume**: Faders are limited to 80% (FL Studio default volume)
