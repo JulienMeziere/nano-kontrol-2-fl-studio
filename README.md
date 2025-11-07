@@ -137,25 +137,30 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 
 ### Control Reference
 
+\*\*Mixer
+
 **Transport Section:**
 
 - `▶ PLAY`: Start playback
 - `■ STOP`: Stop playback
 - `● RECORD`: Start recording
 - `◄◄ REWIND`: Rewind (hold for continuous)
-- `►► FORWARD`: Fast forward (hold for continuous) / Fine selection mode
+- `►► FORWARD`: Fast forward (hold for continuous)
 - `MODE`: Toggle between pattern/song modes
 
-**Instruments Navigation:**
+**Instruments / Patterns Navigation:**
 
-- `◄ PREV`: Previous track (`MODE` + `◄ PREV` = Next pattern)
-- `► NEXT`: Next track (`MODE` + `► NEXT` = Previous pattern)
-- `PREV + NEXT`: Rescan mixer tracks
+- `◄ PREV`: Previous track
+- `► NEXT`: Next track
+- `MODE` + `◄ PREV`: Next pattern
+  `MODE` + `► NEXT`: Previous pattern
 
 **Marker/Selection:**
 
-- `MARKER ◄`: Move back 4 bars (`►► FORWARD` + `MARKER ◄`: Move back 1 bar)
-- `MARKER ►`: Move forward 4 bar (`►► FORWARD` + `MARKER ◄`: Move forward 1 bar)
+- `MARKER ◄`: Move back 4 bars
+- `MARKER ►`: Move forward 4 bar
+- `►► FORWARD` + `MARKER ◄`: Move back 1 bar
+- `►► FORWARD` + `MARKER ◄`: Move forward 1 bar
 - `MARKER SET`: Hold to create time selection
 - `MARKER ◄ + ►`: Toggle save/restore selection
 
@@ -165,7 +170,7 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 - `M`: Mute track group
 - `R`: Arm group master for recording
 - `Faders`: Control group master volume (max 80%)
-- `Knobs`: Pass through to FL Studio
+- `Knobs`: Assign them to whatever you need
 
 ## Workflow Examples
 
