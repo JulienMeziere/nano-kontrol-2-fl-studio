@@ -151,10 +151,13 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 - `►► FORWARD`: Fast forward (hold for continuous)
 - `MODE`: Toggle between song/pattern mode
 
-**Instruments / Patterns Navigation:**
+**Instruments Navigation:**
 
 - `◄ PREV`: Previous instrument
 - `► NEXT`: Next instrument
+
+**Patterns Navigation:**
+
 - `MODE` + `◄ PREV`: Next pattern
 - `MODE` + `► NEXT`: Previous pattern
 
