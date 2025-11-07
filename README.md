@@ -97,7 +97,8 @@ Ambient (8)        Atmosphere [8]
 - **Group Members**: Use parentheses `(1)` through `(8)` in track name
 - **Group Master Buses**: Use brackets `[1]` through `[8]` in track name
 - A track can belong to only one group
-- Group masters receive volume fader control
+- You can have **multiple master tracks** per group (e.g., `Drums [1]`, `Drums Reverb [1]`)
+- All group masters are controlled together by the corresponding fader
 - All tracks in a group respond to S/M/R buttons
 
 ### Example Mixer Setup
