@@ -1,5 +1,7 @@
 # nano-kontrol-2-fl-studio
 
+![8e62a2423fbee297ee0a8513243a70f9_sp](https://github.com/user-attachments/assets/0f2acc0f-249e-4256-b39c-5fe272640b22)
+
 A comprehensive FL Studio MIDI script that transforms your Korg nanoKONTROL2 into a powerful DAW controller with track group management, transport controls, and advanced playlist selection features.
 
 ## Features
