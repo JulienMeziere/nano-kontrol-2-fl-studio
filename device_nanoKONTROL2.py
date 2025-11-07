@@ -48,8 +48,6 @@ ONE_BAR_IN_TICKS = 384
 FOUR_BARS_IN_TICKS = 1536
 # <--
 
-TRACKS_AFFECTED = [3, 6, 23, 47, 55, 59, 67, 32]
-
 
 def OnInit():
     print("*** nanoKONTROL2 script v1 by Julien MEZIERE ***")
