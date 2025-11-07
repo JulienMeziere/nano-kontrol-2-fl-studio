@@ -157,6 +157,8 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 
 **Marker/Selection:**
 
+<img width="233" height="46" alt="image" src="https://github.com/user-attachments/assets/c6ba4840-7db7-4eb1-ae3c-e8cf4c166a13" />
+
 - `MARKER ◄`: Move back 4 bars
 - `MARKER ►`: Move forward 4 bar
 - `►► FORWARD` + `MARKER ◄`: Move back 1 bar
