@@ -103,7 +103,7 @@ Ambient (8)        Atmosphere [8]
 
 ### Example Mixer Setup
 
-<img width="797" height="1293" alt="image" src="https://github.com/user-attachments/assets/0966013c-3ce9-4da4-8476-512c758b62a7" />
+<img width="792" height="950" alt="image" src="https://github.com/user-attachments/assets/79f0bb48-b132-462c-8509-343fa925cc97" />
 
 _Screenshot showing proper track naming convention in FL Studio mixer_
 
