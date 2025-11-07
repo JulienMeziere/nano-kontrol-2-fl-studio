@@ -1,4 +1,4 @@
-# name=nanoMixer
+# name=nano-controls-fl-studio
 # url=https://github.com/olyrhc/nanometer
 
 from ui import *
