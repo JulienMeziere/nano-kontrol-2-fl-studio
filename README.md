@@ -2,7 +2,6 @@
 
 <img width="400" height="107" alt="244fa3efa9c26294498e18e8b92d6a74_sp (1)" src="https://github.com/user-attachments/assets/13b4a93c-1d65-4e50-86d5-99f9ab7d6466" />
 
-
 A comprehensive FL Studio MIDI script that transforms your Korg nanoKONTROL2 into a powerful DAW controller with track group management, transport controls, and advanced playlist selection features.
 
 ## Features
@@ -158,14 +157,12 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 
 <img width="160" height="190" alt="image" src="https://github.com/user-attachments/assets/6c2b576e-fffd-4a38-9f1f-1bc8c3265716" />
 
-
 - `◄ PREV`: Previous instrument
 - `► NEXT`: Next instrument
 
 **Patterns Navigation:**
 
 <img width="247" height="61" alt="image" src="https://github.com/user-attachments/assets/03cd66ae-da17-4c8b-8ccd-c2a81907eb5c" />
-
 
 - `MODE` + `◄ PREV`: Next pattern
 - `MODE` + `► NEXT`: Previous pattern
@@ -185,7 +182,7 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 
 **Track Groups (Channels 1-8):**
 
-- `S`: Solo track group (isolates group)
+- `S`: Solo track group
 - `M`: Mute track group
 - `R`: Arm group master for recording
 - `Faders`: Control group master volume (max 80%)
