@@ -29,7 +29,7 @@ A comprehensive FL Studio MIDI script that transforms your Korg nanoKONTROL2 int
 - **Bar-Snapped Navigation**: `MARKER ◄` or `MARKER ►` to move by 4 bars
 - **Create Selections**: `MARKER SET` to create time selections
 - **Move Selections**: `MARKER SET` + (`◄ PREV` or `► NEXT`) to move selection by its own length
-- **Toggle Selections**: `MARKER ◄` + `MARKER ►` to save/restore selections
+- **Toggle Selections**: `MARKER ◄` + `MARKER ►` to toggle loop mode on or off (saves and restores the loop position)
 - **Fine Control**: Hold `►► FORWARD` during selection for 1-bar precision
 
 ### 🔄 Mixer Track Scanning
@@ -151,7 +151,7 @@ The default MIDI channel settings should work with standard nanoKONTROL2 configu
 - `● RECORD`: Start recording
 - `◄◄ REWIND`: Rewind (hold for continuous)
 - `►► FORWARD`: Fast forward (hold for continuous)
-- `MODE`: Toggle between song/pattern mode
+- `MODE`: Toggle loop mode on or off (saves and restores the loop position)
 
 **Instruments Navigation:**
 
