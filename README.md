@@ -102,7 +102,7 @@ Ambient (8)        Atmosphere [8]
 
 ### Example Mixer Setup
 
-![FL Studio Mixer Setup](screenshot-placeholder.png)
+<img width="797" height="1293" alt="image" src="https://github.com/user-attachments/assets/0966013c-3ce9-4da4-8476-512c758b62a7" />
 _Screenshot showing proper track naming convention in FL Studio mixer_
 
 ### 3. Config.py (Optional)
