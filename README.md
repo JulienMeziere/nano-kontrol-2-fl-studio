@@ -38,7 +38,7 @@ A comprehensive FL Studio MIDI script that transforms your Korg nanoKONTROL2 int
 
 ## Installation
 
-Clone or download this repository to your FL Studio Hardware folder:
+Clone or [download]([url](https://github.com/JulienMeziere/nano-kontrol-2-fl-studio/archive/refs/heads/main.zip)) this repository to your FL Studio Hardware folder:
 
 **Windows:**
 
